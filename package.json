@@ -1,0 +1,42 @@
+{
+  "name": "synapse-feeder",
+  "version": "1.0.0",
+  "description": "Daily Crawling Automation System - 매일 돌아가지만 아무도 관리하지 않는 시스템",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "install:skip-build": "npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source=false"
+  },
+  "keywords": [
+    "crawler",
+    "automation",
+    "data-collection",
+    "batch"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.4",
+    "better-sqlite3": "^12.6.2",
+    "dayjs": "^1.11.10",
+    "handlebars": "^4.7.8",
+    "@slack/web-api": "^7.0.0",
+    "sanitize-html": "^2.11.0",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/sanitize-html": "^2.9.5",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

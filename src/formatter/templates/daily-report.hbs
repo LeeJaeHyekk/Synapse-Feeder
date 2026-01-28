@@ -1,0 +1,33 @@
+📊 *Daily Crawling Report*
+🗓 {{date}}
+
+{{#if hasFailures}}
+⚠️ *Failed Sources:* {{failedSources}}
+{{/if}}
+
+━━━━━━━━━━━━━━━━━━━━
+*Summary*
+• Total Sources: {{totalSources}}
+• Successful: {{successfulCount}}
+• Failed: {{failedCount}}
+• Total Items: {{totalItems}}
+• Execution Time: {{executionTime}}ms
+
+{{#each sources}}
+━━━━━━━━━━━━━━━━━━━━
+*📰 {{source}}* ({{count}})
+{{#each articles}}
+• *{{title}}*
+  {{#if summary}}_{{summary}}_{{/if}}
+  🔗 {{url}}
+{{/each}}
+
+{{/each}}
+
+{{#if hasFailures}}
+━━━━━━━━━━━━━━━━━━━━
+*Failed Sources Details*
+{{#each failures}}
+• *{{source}}*: {{error}}
+{{/each}}
+{{/if}}
