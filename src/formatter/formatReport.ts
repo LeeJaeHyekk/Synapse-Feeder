@@ -1,8 +1,13 @@
-import type { ExecutionContext, ExecutionResult, Article } from '../types'
+import type { ExecutionContext, ExecutionResult, Article } from '../types/index.js'
 import Handlebars from 'handlebars'
 import { readFileSync } from 'fs'
-import { join } from 'path'
-import { isArticleArray } from '../types'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+import { isArticleArray } from '../types/index.js'
+
+// ESM 환경에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 /**
  * 일일 리포트 포맷팅
@@ -21,7 +26,7 @@ export function formatDailyReport(
     return '⚠️ Invalid article data format'
   }
 
-  // 템플릿 로드 (CommonJS 환경에서 __dirname 사용)
+  // 템플릿 로드 (ESM 환경에서 import.meta.url 사용)
   const templatePath = join(__dirname, 'templates', 'daily-report.hbs')
   const templateSource = readFileSync(templatePath, 'utf-8')
   const template = Handlebars.compile(templateSource)

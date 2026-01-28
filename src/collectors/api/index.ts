@@ -1,4 +1,4 @@
 /**
  * API Collector 구현체들
  */
-export { ExampleApiCollector } from './ExampleApiCollector'
+export { ExampleApiCollector } from './ExampleApiCollector.js'

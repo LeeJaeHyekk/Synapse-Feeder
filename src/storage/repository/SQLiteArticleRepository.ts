@@ -1,8 +1,8 @@
-import type { ExecutionContext, Article } from '../../types'
-import type { ArticleRepository } from './ArticleRepository'
+import type { ExecutionContext, Article } from '../../types/index.js'
+import type { ArticleRepository } from './ArticleRepository.js'
 import Database from 'better-sqlite3'
 import dayjs from 'dayjs'
-import { isArticleArray } from '../../types'
+import { isArticleArray } from '../../types/index.js'
 
 /**
  * SQLite 기반 Article Repository 구현

@@ -1,5 +1,5 @@
 import { WebClient } from '@slack/web-api'
-import type { ExecutionContext } from '../types'
+import type { ExecutionContext } from '../types/index.js'
 
 /**
  * 에러 전용 Notifier

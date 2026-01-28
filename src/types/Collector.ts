@@ -1,4 +1,4 @@
-import type { ExecutionContext } from './ExecutionContext'
+import type { ExecutionContext } from './ExecutionContext.js'
 
 /**
  * Raw Record 타입

@@ -1,6 +1,6 @@
 import { WebClient } from '@slack/web-api'
-import type { Notifier } from './Notifier'
-import type { ExecutionContext } from '../types'
+import type { Notifier } from './Notifier.js'
+import type { ExecutionContext } from '../types/index.js'
 
 /**
  * Slack Notifier 구현

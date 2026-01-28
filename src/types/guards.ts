@@ -1,7 +1,7 @@
-import type { RawRecord } from './Collector'
-import type { Article } from './Article'
-import type { ExecutionContext } from './ExecutionContext'
-import { ArticleSchema } from '../normalizers/schemas/Article.schema'
+import type { RawRecord } from './Collector.js'
+import type { Article } from './Article.js'
+import type { ExecutionContext } from './ExecutionContext.js'
+import { ArticleSchema } from '../normalizers/schemas/Article.schema.js'
 
 /**
  * 타입 가드 함수들

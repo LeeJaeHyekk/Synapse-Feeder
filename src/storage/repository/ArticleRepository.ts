@@ -1,4 +1,4 @@
-import type { ExecutionContext, Article } from '../../types'
+import type { ExecutionContext, Article } from '../../types/index.js'
 
 /**
  * Article Repository Interface

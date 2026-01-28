@@ -93,7 +93,7 @@ npm install
 
 **참고**: 프로젝트 루트에 `.npmrc` 파일이 생성되어 있어 `build-from-source=false`가 기본 설정됩니다.
 
-## 방법 3: Python 및 빌드 도구 설치 (완전한 해결)
+## 방법 5: Python 및 빌드 도구 설치 (완전한 해결)
 
 더 나은 성능과 호환성을 위해 네이티브 빌드를 사용하려면:
 
@@ -128,4 +128,4 @@ npm run build
 
 ## 추가 도움말
 
-자세한 내용은 [Windows 설치 가이드](./docs/WINDOWS_SETUP.md)를 참고하세요.
+더 자세한 내용은 [빠른 시작 가이드](./QUICK_START.md)를 참고하세요.

@@ -1,13 +1,15 @@
-import { createExecutionContext } from './context'
-import { loadConfig } from './config'
-import { loadCollectors } from './collectors'
-import { normalizeArticles } from './normalizers'
-import { createRawStorage } from './storage/raw'
-import { createArticleRepository } from './storage/repository'
-import { formatDailyReport } from './formatter'
-import { createNotifier, createErrorNotifier, safeNotify } from './notifier'
-import { withTimeout } from './utils'
-import { ExecutionResult, type Article, isRawRecordArray } from './types'
+import * as Sentry from '@sentry/node'
+import { createExecutionContext } from './context/index.js'
+import { loadConfig } from './config/index.js'
+import { loadCollectors } from './collectors/index.js'
+import { normalizeArticles } from './normalizers/index.js'
+import { createRawStorage } from './storage/raw/index.js'
+import { createArticleRepository } from './storage/repository/index.js'
+import { Deduplicator } from './storage/deduplicator.js'
+import { formatDailyReport } from './formatter/index.js'
+import { createNotifier, createErrorNotifier, safeNotify } from './notifier/index.js'
+import { withTimeout } from './utils/index.js'
+import { ExecutionResult, type Article, isRawRecordArray } from './types/index.js'
 
 /**
  * Orchestrator
@@ -37,6 +39,7 @@ export async function runApp(): Promise<void> {
     // 4. 실행 결과 집계
     const executionResult = new ExecutionResult()
     const allArticles: Article[] = []
+    const deduplicator = Deduplicator.createDefault()
 
     // 5. Collector 순회
     for (const collector of collectors) {
@@ -78,9 +81,20 @@ export async function runApp(): Promise<void> {
           continue // normalize 실패는 source 단위 스킵
         }
 
+        // 중복 제거 (addAlgorism.md 개선사항)
+        const uniqueArticles = deduplicator.deduplicate(normalized)
+        const duplicateCount = normalized.length - uniqueArticles.length
+
+        if (duplicateCount > 0) {
+          ctx.logger.info(
+            `Deduplicated ${duplicateCount} items from ${collector.sourceName}`,
+            { source: collector.sourceName, duplicates: duplicateCount }
+          )
+        }
+
         // DB 저장
-        await repository.saveMany(ctx, normalized)
-        allArticles.push(...normalized)
+        await repository.saveMany(ctx, uniqueArticles)
+        allArticles.push(...uniqueArticles)
 
         executionResult.success(collector.sourceName, normalized.length)
         ctx.logger.info(`✅ ${collector.sourceName}: ${normalized.length} items`)
@@ -91,6 +105,20 @@ export async function runApp(): Promise<void> {
           `[CollectorFailed] source=${collector.sourceName}`,
           err
         )
+
+        // Sentry에 에러 전송 (설정된 경우)
+        if (process.env.SENTRY_DSN) {
+          Sentry.captureException(err, {
+            tags: {
+              component: 'collector',
+              source: collector.sourceName,
+            },
+            extra: {
+              runId: ctx.runId,
+              runDate: ctx.runDate,
+            },
+          })
+        }
 
         if (errorNotifier) {
           await errorNotifier.notifyCollectorError(
@@ -119,6 +147,21 @@ export async function runApp(): Promise<void> {
 
   } catch (err) {
     ctx.logger.error('[FATAL] Unexpected error in orchestrator', err)
+    
+    // Sentry에 치명적 에러 전송 (설정된 경우)
+    if (process.env.SENTRY_DSN) {
+      Sentry.captureException(err, {
+        tags: {
+          component: 'orchestrator',
+          severity: 'fatal',
+        },
+        extra: {
+          runId: ctx.runId,
+          runDate: ctx.runDate,
+        },
+      })
+    }
+    
     throw err
   }
 }

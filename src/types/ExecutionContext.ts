@@ -1,5 +1,5 @@
-import type { Logger } from '../logger'
-import type { AppConfig } from '../config'
+import type { Logger } from '../logger/index.js'
+import type { AppConfig } from '../config/index.js'
 
 /**
  * Execution Context

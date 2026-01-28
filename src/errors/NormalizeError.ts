@@ -1,4 +1,4 @@
-import { AppError } from './AppError'
+import { AppError } from './AppError.js'
 
 /**
  * Normalize 과정에서 발생한 에러

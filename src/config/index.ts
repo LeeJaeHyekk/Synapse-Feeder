@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
-import { EnvSchema } from './env.schema'
-import type { AppConfig } from './types'
+import { EnvSchema } from './env.schema.js'
+import type { AppConfig } from './types.js'
 
 // .env 파일 로드
 config()
@@ -45,4 +45,4 @@ export function loadConfig(): AppConfig {
 /**
  * Config 관련 타입 export
  */
-export type { AppConfig } from './types'
+export type { AppConfig } from './types.js'

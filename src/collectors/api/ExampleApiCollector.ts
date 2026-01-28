@@ -1,12 +1,15 @@
-import type { BaseCollector, ExecutionContext, RawRecord } from '../../types'
-import { retry, isRetryableHttpError } from '../../utils'
-import axios from 'axios'
+import type { ExecutionContext, RawRecord } from '../../types/index.js'
+import { BaseApiCollector } from '../base/BaseApiCollector.js'
+import type { AxiosRequestConfig } from 'axios'
 
 /**
  * 예제 API Collector
  * REST API를 호출하는 Collector 예시
+ * 
+ * 모듈화 개선:
+ * - BaseApiCollector 상속으로 공통 로직 재사용
  */
-export class ExampleApiCollector implements BaseCollector {
+export class ExampleApiCollector extends BaseApiCollector {
   readonly sourceName = 'example_api'
 
   readonly policy = {
@@ -18,26 +21,22 @@ export class ExampleApiCollector implements BaseCollector {
     },
   }
 
-  async collect(ctx: ExecutionContext): Promise<RawRecord[]> {
-    ctx.logger.info(`Collecting from ${this.sourceName}`)
-
-    return retry(
-      async () => {
-        const response = await axios.get('https://api.example.com/articles', {
-          timeout: 3_000,
-          headers: {
-            'Accept': 'application/json',
-          },
-        })
-
-        // API 응답을 Raw 데이터로 반환
-        return (response.data.data ?? []) as RawRecord[]
+  protected getRequestConfig(): AxiosRequestConfig {
+    return {
+      url: 'https://api.example.com/articles',
+      method: 'GET',
+      timeout: 3_000,
+      headers: {
+        'Accept': 'application/json',
       },
-      {
-        retries: this.policy.maxRetries,
-        backoffMs: 500,
-        retryOn: isRetryableHttpError,
-      }
-    )
+    }
+  }
+
+  protected parseResponse(data: unknown, ctx: ExecutionContext): RawRecord[] {
+    // API 응답을 Raw 데이터로 반환
+    if (typeof data === 'object' && data !== null && 'data' in data) {
+      return (data as { data: RawRecord[] }).data ?? []
+    }
+    return []
   }
 }

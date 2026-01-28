@@ -10,8 +10,13 @@ dayjs.extend(utc)
  * @returns Date 객체
  */
 export function parseDate(input: unknown): Date {
+  // 빈 문자열이나 공백만 있는 경우 현재 시간 사용
+  if (typeof input === 'string' && input.trim() === '') {
+    return new Date()
+  }
+
   if (input === null || input === undefined) {
-    throw new Error(`Invalid date value: ${String(input)}`)
+    return new Date() // 기본값으로 현재 시간 사용
   }
 
   if (typeof input === 'string' || typeof input === 'number') {
@@ -25,5 +30,6 @@ export function parseDate(input: unknown): Date {
     return input
   }
 
-  throw new Error(`Invalid date value: ${String(input)}`)
+  // 파싱 실패 시 현재 시간 반환 (throw 대신)
+  return new Date()
 }

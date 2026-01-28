@@ -1,5 +1,5 @@
-import type { RawStorage } from './RawStorage'
-import { FileRawStorage } from './RawStorage'
+import type { RawStorage } from './RawStorage.js'
+import { FileRawStorage } from './RawStorage.js'
 
 /**
  * Raw Storage 생성

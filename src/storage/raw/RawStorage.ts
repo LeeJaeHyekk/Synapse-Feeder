@@ -1,5 +1,5 @@
-import type { ExecutionContext, RawRecord } from '../../types'
-import { isRawRecordArray } from '../../types'
+import type { ExecutionContext, RawRecord } from '../../types/index.js'
+import { isRawRecordArray } from '../../types/index.js'
 import { promises as fs } from 'fs'
 import path from 'path'
 

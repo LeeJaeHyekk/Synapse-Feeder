@@ -1,8 +1,8 @@
-import type { ExecutionContext, RawRecord } from '../types'
-import { ArticleSchema, type Article } from './schemas/Article.schema'
-import { parseDate, sanitizeHtml } from './utils'
-import { NormalizeError } from '../errors'
-import { isRawRecordArray } from '../types'
+import type { ExecutionContext, RawRecord } from '../types/index.js'
+import { ArticleSchema, type Article } from './schemas/Article.schema.js'
+import { parseDate, sanitizeHtml } from './utils/index.js'
+import { NormalizeError } from '../errors/index.js'
+import { isRawRecordArray } from '../types/index.js'
 
 /**
  * Raw 데이터를 Article로 정규화

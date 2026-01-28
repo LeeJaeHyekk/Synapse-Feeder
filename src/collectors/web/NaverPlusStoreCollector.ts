@@ -1,12 +1,25 @@
-import type { BaseCollector, ExecutionContext, RawRecord } from '../../types'
-import { retry, isRetryableHttpError } from '../../utils'
-import axios from 'axios'
+import type { ExecutionContext, RawRecord } from '../../types/index.js'
+import { BaseWebCollector } from '../base/BaseWebCollector.js'
+import {
+  extractTitle,
+  loadHtml,
+  extractStructuredItems,
+  extractLinks,
+  createRawRecord,
+  createRawRecords,
+  resolveUrl,
+} from '../utils/htmlParser.js'
 
 /**
  * 네이버 플러스 스토어 Collector
  * 베스트 키워드 및 상품 정보 수집
+ * 
+ * 고도화 개선:
+ * - Cheerio 기반 구조화된 데이터 추출
+ * - 실제 링크, 날짜 정보 수집
+ * - 더 정확한 셀렉터 사용
  */
-export class NaverPlusStoreCollector implements BaseCollector {
+export class NaverPlusStoreCollector extends BaseWebCollector {
   readonly sourceName = 'naver_plus_store'
 
   readonly policy = {
@@ -18,63 +31,100 @@ export class NaverPlusStoreCollector implements BaseCollector {
     },
   }
 
-  async collect(ctx: ExecutionContext): Promise<RawRecord[]> {
-    ctx.logger.info(`Collecting from ${this.sourceName}`)
+  protected getUrl(): string {
+    return 'https://snxbest.naver.com/home'
+  }
 
-    return retry(
-      async () => {
-        const response = await axios.get('https://snxbest.naver.com/home', {
-          timeout: 10_000,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-          },
-        })
+  protected parseHtml(html: string, ctx: ExecutionContext): RawRecord[] {
+    const baseUrl = 'https://snxbest.naver.com/home'
+    const $ = loadHtml(html)
+    const items: RawRecord[] = []
 
-        // HTML 응답을 Raw 데이터로 변환
-        // 실제로는 HTML 파싱이 필요하지만, 테스트를 위해 간단하게 처리
-        const html = response.data
+    // 페이지 제목 추출
+    const pageTitle = extractTitle(html, '네이버 플러스 스토어')
 
-        // 베스트 키워드 추출 (간단한 정규식 사용)
-        const keywordMatches = html.match(/<[^>]*>([^<]*랭킹[^<]*)</g) || []
-        const items: RawRecord[] = []
+    // 베스트 키워드 섹션 찾기 (다양한 선택자 시도)
+    const keywordSelectors = [
+      '.keyword_item',
+      '.best_keyword',
+      '[class*="keyword"]',
+      '[class*="rank"]',
+      'li[class*="item"]',
+      '.item',
+    ]
 
-        // 페이지 제목 추출
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-        const pageTitle = titleMatch ? titleMatch[1].trim() : '네이버 플러스 스토어'
+    let keywordItems: Array<{ title: string; url?: string; content: string }> = []
 
-        // 기본 정보 수집
-        items.push({
-          title: pageTitle,
-          url: 'https://snxbest.naver.com/home',
-          date: new Date().toISOString(),
-          content: `네이버 플러스 스토어 메인 페이지\n키워드 매치 수: ${keywordMatches.length}`,
+    // 각 선택자로 시도
+    for (const selector of keywordSelectors) {
+      const elements = $(selector)
+      if (elements.length > 0) {
+        ctx.logger.info(`Found ${elements.length} items with selector: ${selector}`, {
           source: this.sourceName,
+          selector,
         })
 
-        // 키워드 정보 추가 (최대 10개)
-        keywordMatches.slice(0, 10).forEach((match: string, index: number) => {
-          const text = match.replace(/<[^>]*>/g, '').trim()
-          if (text && text.length > 0) {
-            items.push({
-              title: `베스트 키워드 ${index + 1}: ${text}`,
-              url: 'https://snxbest.naver.com/home',
-              date: new Date().toISOString(),
-              content: text,
-              source: this.sourceName,
+        elements.each((_, el) => {
+          const $el = $(el)
+          const title = $el.find('a, .title, .text').first().text().trim() 
+            || $el.text().trim()
+          const url = $el.find('a').first().attr('href')
+          const content = $el.find('.desc, .description, p').first().text().trim()
+            || title
+
+          if (title && title.length > 2) {
+            keywordItems.push({
+              title: title.length > 50 ? title.substring(0, 50) + '...' : title,
+              url: url ? resolveUrl(baseUrl, url) : undefined,
+              content: content || title,
             })
           }
         })
 
-        ctx.logger.info(`Collected ${items.length} items from ${this.sourceName}`)
-        return items
-      },
-      {
-        retries: this.policy.maxRetries,
-        backoffMs: 1000,
-        retryOn: isRetryableHttpError,
+        if (keywordItems.length > 0) break
       }
+    }
+
+    // 링크 기반 추출 (키워드가 없을 경우)
+    if (keywordItems.length === 0) {
+      const links = extractLinks(html, 'a[href*="keyword"], a[href*="rank"], a[href*="best"]', 20)
+      keywordItems = links.map(link => ({
+        title: link.title,
+        url: resolveUrl(baseUrl, link.url),
+        content: link.title,
+      }))
+    }
+
+    // 기본 페이지 정보
+    items.push(
+      createRawRecord(
+        this.sourceName,
+        pageTitle,
+        baseUrl,
+        `네이버 플러스 스토어 메인 페이지\n수집된 키워드: ${keywordItems.length}개`
+      )
     )
+
+    // 키워드 정보 추가 (최대 20개)
+    if (keywordItems.length > 0) {
+      items.push(
+        ...createRawRecords(
+          this.sourceName,
+          baseUrl,
+          keywordItems.slice(0, 20).map((item, index) => ({
+            title: `베스트 키워드 ${index + 1}: ${item.title}`,
+            content: item.content,
+            url: item.url,
+          }))
+        )
+      )
+    }
+
+    ctx.logger.info(`Extracted ${keywordItems.length} keywords from ${this.sourceName}`, {
+      source: this.sourceName,
+      count: keywordItems.length,
+    })
+
+    return items
   }
 }

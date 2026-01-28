@@ -100,6 +100,6 @@ build-from-source=false
 
 ## 도움말
 
-- [최종 설계도](./docs/최종%20설계도.md)
+- [최종 설계도](./최종%20설계도.md)
 - [Windows 설치 가이드](./INSTALL_WINDOWS.md)
-- [README](./README.md)
+- [README](../README.md)
